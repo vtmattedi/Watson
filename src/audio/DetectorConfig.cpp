@@ -28,11 +28,11 @@ namespace watson
         Config<bool> sidebandsEnable("acoustic:compressor:sidebands:enable",
                                      kDefaults.sidebandsEnable);
         // "lower_margin_db,upper_margin_db". NightMare's Config codecs have no
-        // fixed pair/array type, so this is a validated String in the
+        // fixed pair/array type, so this is a validated std::string in the
         // canonical "lower,upper" form -- no whitespace. "0,0" is neutral and
         // has no effect while sidebands:enable is false.
-        Config<String> sidebandThresholds("acoustic:compressor:sidebands:thresholds",
-                                          String("0,0"));
+        Config<std::string> sidebandThresholds("acoustic:compressor:sidebands:thresholds",
+                                          std::string("0,0"));
 
         // ---- fan ----
         Config<float> fanMid("acoustic:fan:mid_threshold_db", kDefaults.fanMidThresholdDb);
@@ -82,7 +82,7 @@ namespace watson
             return paramsConsistent(p);
         }
 
-        bool validatedSidebands(Config<String> &, const String &requested)
+        bool validatedSidebands(Config<std::string> &, const std::string &requested)
         {
             float lower, upper;
             return parseSidebandMargins(requested.c_str(), lower, upper);

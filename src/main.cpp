@@ -63,8 +63,8 @@ namespace
             // Test hook: make the acquisition see a dead microphone, to
             // exercise the flatline -> hardware-disconnected path without
             // unplugging anything.  WATSON SIMFLAT ON | OFF
-            const bool on = message.args[0].equalsIgnoreCase("ON");
-            if (!on && !message.args[0].equalsIgnoreCase("OFF"))
+            const bool on = NightMare::Text::equalsIgnoreCase(message.args[0], "ON");
+            if (!on && !NightMare::Text::equalsIgnoreCase(message.args[0], "OFF"))
                 result.response = "usage: WATSON SIMFLAT ON | OFF";
             else
             {
@@ -108,28 +108,80 @@ void onOta(OTA_INFO info, int data)
     }
 }
 
-// ESP-NOW is Watson's preferred connection, with MQTT as the failover.
-// NightMare's own default is MQTT and the preference is a persistent Config, so
-// it is applied once -- recorded in this marker -- and a later
-// `CONFIG SET nightmare:connection:preferred_connection` is respected.
-static Config<bool> espnowPreferenceApplied("acoustic:connection:espnow_preferred_applied",
-                                            false);
-
-static void preferEspNowOnce()
+#if NM_ENABLE_WIFI
+static void onWifiConnected(bool firstConnection)
 {
-    if (espnowPreferenceApplied.value())
+    const NightMare::WiFiInfo info = WiFi_info();
+    Serial.printf("# wifi: IP %s: %s (SSID %s, BSSID %s, channel %u, RSSI %d dBm)\n",
+                  firstConnection ? "acquired" : "reacquired",
+                  info.ip.c_str(), info.ssid.c_str(), info.bssid.c_str(),
+                  static_cast<unsigned>(info.channel), static_cast<int>(info.rssi));
+}
+#endif
+
+#if NM_ENABLE_MQTT && NM_NETWORK_ESPNOW
+// NightMareNetwork deliberately separates routing preference from service
+// lifecycle. Watson owns the latter: ESP-NOW is tried first and MQTT is not
+// enabled until ESP-NOW has been unavailable for this long. Zero disables
+// automatic MQTT failover, matching the former NMNW Config semantics.
+static Config<int> mqttFailoverSeconds("nightmare:connection:failover_secs", 60);
+static uint32_t espNowUnavailableSinceMs = 0;
+static bool espNowUnavailableTiming = false;
+
+// Reassert the routing preference at boot so a stale persisted MQTT preference
+// cannot reverse the intended order.
+static void preferEspNow()
+{
+    if (NightMare::GetPreferredConnection() == NightMare::ConnectionType::ESP_NOW)
         return;
 
-    const int espnow = static_cast<int>(NightMare::ConnectionType::ESP_NOW);
-    if (NightMare::preferredConnection.value() != espnow)
-    {
-        NightMare::preferredConnection.set(espnow);
-        // Also move off whatever was started from the previous preference.
-        NightMare::SelectConnection(NightMare::ConnectionType::ESP_NOW);
+    if (NightMare::SelectConnection(NightMare::ConnectionType::ESP_NOW))
         Serial.println("# watson: preferred connection set to ESP-NOW (failover: MQTT)");
-    }
-    espnowPreferenceApplied.set(true);
+    else
+        Serial.println("ERROR: unable to set ESP-NOW routing preference");
 }
+
+static void manageMqttFailover()
+{
+    const bool espNowActive =
+        NightMare::EspNow_state() == NightMare::ConnectivityState::CONNECTED &&
+        NightMare::GetActiveConnection() == NightMare::ConnectionType::ESP_NOW;
+
+    if (espNowActive)
+    {
+        espNowUnavailableTiming = false;
+        if (NightMare::Mqtt_enabled())
+        {
+            NightMare::Mqtt_disable();
+            Serial.println("# watson: ESP-NOW active; MQTT failover stopped");
+        }
+        return;
+    }
+
+    if (!espNowUnavailableTiming)
+    {
+        espNowUnavailableSinceMs = millis();
+        espNowUnavailableTiming = true;
+    }
+
+    if (NightMare::Mqtt_enabled())
+        return;
+
+    const int delaySeconds = mqttFailoverSeconds.value();
+    if (delaySeconds <= 0)
+        return;
+
+    const bool failed = NightMare::EspNow_state() == NightMare::ConnectivityState::ERROR;
+    const uint32_t delayMs = static_cast<uint32_t>(delaySeconds) * 1000UL;
+    if (!failed && millis() - espNowUnavailableSinceMs < delayMs)
+        return;
+
+    if (NightMare::Mqtt_enable(NightMare::MqttProfile::REMOTE))
+        Serial.println("# watson: ESP-NOW unavailable; MQTT failover started");
+    else
+        Serial.println("ERROR: unable to start MQTT failover");
+}
+#endif
 
 void setup()
 {
@@ -153,11 +205,23 @@ void setup()
 
     setCommandResolver(onWatsonCommand);
     onOTAEvent(onOta);
+#if NM_ENABLE_WIFI
+    WiFi_onConnected(onWifiConnected);
+#endif
 
-    // Resources and Configs are declared and bound; NightMare restores the
-    // persisted Configs and starts Wi-Fi, MQTT and OTA from here.
+    // NightMare restores Configs and starts the radio and ESP-NOW. NM_WIFI_AUTO
+    // is off so it cannot also start MQTT before Watson declares a failover.
     startNightMareESP();
-    preferEspNowOnce();
+#if NM_ENABLE_MQTT && NM_NETWORK_ESPNOW
+    preferEspNow();
+
+    // Keep the IP service available for SNTP, OTA and debug TCP without
+    // enabling its MQTT client. MQTT is owned by manageMqttFailover().
+    if (NightMare::WiFiBegin())
+        Serial.println("# watson: default connectivity Wi-Fi/IP + ESP-NOW; MQTT armed for failover");
+    else
+        Serial.println("ERROR: Wi-Fi/IP start failed; MQTT failover unavailable");
+#endif
 
     watson::gWatson.startAnalysis();
 
@@ -170,6 +234,9 @@ void setup()
 void loop()
 {
     tickNightMareESP();
+#if NM_ENABLE_MQTT && NM_NETWORK_ESPNOW
+    manageMqttFailover();
+#endif
     watson::gWatson.pump();
 
     // Short enough that a beep or a state change is published within a few

@@ -202,18 +202,27 @@ and `replay --flatline <pcm>` (87 real recordings: 0 disconnects).
 ## Connection: ESP-NOW preferred
 
 `NM_NETWORK_ESPNOW 1`. ESP-NOW (to the NightMare gateway) is the preferred
-connection and the remote TLS broker is the failover, used when no gateway
-answers within `nightmare:connection:failover_secs` (60 s). The preference is
-applied once on first boot (marker Config `acoustic:connection:espnow_preferred_applied`),
-so a later `CONFIG SET nightmare:connection:preferred_connection` is respected.
+route and the remote TLS broker is the failover. Watson disables NMNW's
+automatic Wi-Fi/MQTT startup, starts Wi-Fi/IP without MQTT, and enables the
+remote MQTT service only when ESP-NOW enters `ERROR` or remains unavailable for
+`nightmare:connection:failover_secs` (default 60 s; 0 disables failover). The
+preference is asserted on every boot, so a stale persisted MQTT preference
+cannot reverse the order.
+
+The default runtime combination is therefore **Wi-Fi/IP + ESP-NOW**. MQTT and
+ESP-NOW are both compiled and supported (`NM_ENABLE_MQTT 1`,
+`NM_NETWORK_MQTT 1`, `NM_NETWORK_ESPNOW 1`), but the MQTT service remains idle
+until failover so it does not open a parallel TLS broker connection. Every
+initial IP acquisition and later reacquisition is logged with the address,
+SSID, BSSID, channel and RSSI.
 `creds.h` needs `NM_ESPNOW_PSK`, the gateway's network key (16-64 bytes); the
 shipped value is a placeholder and must be replaced.
 
-NightMare runs the Wi-Fi station only while an MQTT profile is selected, so
-**while ESP-NOW is connected there is no IP link**: SNTP, OTA and the raw PCM
-debug server are unavailable until the device fails over (or you run
-`NETWORK SET MQTT`). ESP-NOW also adds tasks (client, rx log, worker), which the
-~35 KB heap budget below has to absorb: untested on hardware.
+When ESP-NOW becomes the active route, Watson disables MQTT again. Consequently
+there are no broker connection or TLS retries while ESP-NOW is carrying normal
+NightMare traffic. Wi-Fi/IP remains available for SNTP, OTA and the raw PCM
+debug server. ESP-NOW also adds tasks (client, rx log, worker), which the ~35 KB
+heap budget below has to absorb: untested on hardware.
 
 ## Validation
 

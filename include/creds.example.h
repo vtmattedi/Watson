@@ -36,9 +36,9 @@
     "-----END CERTIFICATE-----\n"
 
 // ESP-NOW network key: 16-64 bytes, the same as the NightMare gateway's
-// NM_ESPNOW_PSK. A wrong key is not fatal -- the gateway rejects the AUTH, the
-// device backs off, and after failover_secs it falls back to MQTT -- but the
-// device will not connect over ESP-NOW until it matches.
+// NM_ESPNOW_PSK. A wrong key is not fatal -- the gateway rejects the AUTH and
+// normal NightMare traffic continues over MQTT -- but the device will not use
+// ESP-NOW until it matches.
 #define NM_ESPNOW_PSK "REPLACE-WITH-GATEWAY-PSK"
 
 // --- Watson ---

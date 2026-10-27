@@ -7,6 +7,7 @@
 #include <freertos/task.h>
 
 #include <atomic>
+#include <string>
 
 #include "AudioBuffer.h"
 #include "AudioCapture.h"
@@ -17,7 +18,7 @@ namespace watson
 {
     // What an accepted beep carries onto the network. NightMare's Event codecs
     // are the built-in ones (no application-defined types), so on the wire
-    // this travels as a JSON object in a ManagedEvent<String>; the struct is
+    // this travels as a JSON object in a ManagedEvent<std::string>; the struct is
     // the semantic payload.
     struct BeepPayload
     {
@@ -66,7 +67,7 @@ namespace watson
         void pump();
 
         // The WATSON STATS text.
-        String report();
+        std::string report();
 
         // A firmware update is (not) running; see AudioCapture::setMaintenance.
         void setMaintenance(bool active) { capture_.setMaintenance(active); }

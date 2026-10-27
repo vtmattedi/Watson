@@ -17,7 +17,7 @@ namespace watson
     //
     //   acoustic:fan_detected         ManagedSensor<bool>   state
     //   acoustic:compressor_detected  ManagedSensor<bool>   state
-    //   acoustic:beep                 ManagedEvent<String>  transient
+    //   acoustic:beep                 ManagedEvent<std::string>  transient
     //
     // The two states are independent observations and both may be true; there
     // is no combined OFF/FAN/COMPRESSOR resource. Watson does not infer
@@ -27,7 +27,7 @@ namespace watson
     {
         ManagedSensor<bool> fanDetected("acoustic:fan_detected");
         ManagedSensor<bool> compressorDetected("acoustic:compressor_detected");
-        ManagedEvent<String> beepEvent("acoustic:beep");
+        ManagedEvent<std::string> beepEvent("acoustic:beep");
 
 #if ENABLE_TCP
         RawAudioTcp gTcp;
@@ -350,7 +350,7 @@ namespace watson
         {
             char json[160];
             encodeBeepPayload(payload, json, sizeof(json));
-            beepEvent.fire(String(json));
+            beepEvent.fire(std::string(json));
             beepsFired_++;
             Serial.printf("# watson: beep #%lu %.0f Hz %u ms %.1f dB\n",
                           static_cast<unsigned long>(payload.event_id),
@@ -364,7 +364,7 @@ namespace watson
     // Diagnostics (WATSON STATS)
     // ------------------------------------------------------------------
 
-    String WatsonAcoustic::report()
+    std::string WatsonAcoustic::report()
     {
         const CaptureStats &c = capture_.stats();
         const CoreStats &k = core_->stats();
@@ -467,6 +467,6 @@ namespace watson
                  (unsigned long)(analysisTask_ ? uxTaskGetStackHighWaterMark(analysisTask_)
                                                : 0),
                  (unsigned long)uxTaskGetStackHighWaterMark(nullptr));
-        return String(buffer);
+        return std::string(buffer);
     }
 } // namespace watson

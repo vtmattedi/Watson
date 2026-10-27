@@ -28,18 +28,20 @@
 #define NM_ENABLE_WEBSOCKET 0
 #define NM_ENABLE_LVGL 0
 
-// Connection profiles. ESP-NOW (to the NightMare gateway) is preferred, with
-// the remote (TLS) broker -- the one the PC backend and the controller already
-// use -- as the failover when no gateway answers within
-// nightmare:connection:failover_secs. There is no local broker.
-//
-// The Wi-Fi station only runs while an MQTT profile is selected, so while
-// ESP-NOW is the active connection there is no IP link: SNTP, OTA and the raw
-// PCM debug server wait for the failover to MQTT (or for an explicit
-// `NETWORK SET MQTT`). Needs NM_ESPNOW_PSK in creds.h.
+// Connectivity services. Watson starts ESP-NOW first. Wi-Fi/IP remains up for
+// SNTP, OTA and the raw PCM debug server, but MQTT itself stays disabled while
+// ESP-NOW is active and is enabled only by Watson's failover controller.
+// There is no local broker. ESP-NOW needs NM_ESPNOW_PSK in creds.h.
 #define NM_NETWORK_MQTT 1
 #define NM_NETWORK_LOCALMQTT 0
 #define NM_NETWORK_ESPNOW 1
+
+// Watson owns MQTT failover timing when both transports are built. Keep
+// NightMare from enabling MQTT merely because Wi-Fi/IP is enabled; setup()
+// starts Wi-Fi/IP explicitly and enables MQTT only after ESP-NOW fails.
+#if NM_ENABLE_MQTT && NM_NETWORK_ESPNOW
+#define NM_WIFI_AUTO 0
+#endif
 
 #define NM_CONSOLE_BUILTINS 1
 // Serial carries the NightMare console (CONFIG ..., > resource ..., and the
