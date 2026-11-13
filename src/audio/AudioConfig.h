@@ -59,9 +59,9 @@ namespace watson
 
 #if CONFIG_IDF_TARGET_ESP32C3
     // C3 SuperMini: single core, audio and network share the CPU.
-    constexpr int kI2sBclk = 4;
-    constexpr int kI2sLrclk = 5;
-    constexpr int kI2sDin = 6;
+    constexpr int kI2sBclk = 5;
+    constexpr int kI2sLrclk = 6;
+    constexpr int kI2sDin = 7;
     constexpr int kAcquisitionCore = 0;
     constexpr int kAnalysisCore = 0;
     constexpr int kTcpCore = 0;
