@@ -17,7 +17,6 @@ Additional network Resources (the original observation contract is unchanged):
 acoustic:fan:enabled          ManagedState<bool>  read/write, default true
 acoustic:compressor:enabled   ManagedState<bool>  read/write, default true
 acoustic:beep:enabled         ManagedState<bool>  read/write, default true
-irsend                        ManagedAction       NEC 32-bit code, 38 kHz IR TX
 ```
 
 The writable controls are network output gates, not DSP or audio capture
@@ -25,15 +24,10 @@ toggles. Disabling fan/compressor withdraws their retained state (unavailable,
 **not false**). Enabling re-announces the current held observation when the
 microphone is connected. Disabling beep drops new events; re-enabling never
 replays suppressed events. The toggles are runtime values and start enabled
-after reboot. Send the `irsend` action a string payload of `0xEB14FF00`
-or JSON `{"code":"0xEB14FF00"}`. Invalid input or unavailable RMT reports
-failure. NEC is transmitted LSB-first, once, with a 38 kHz carrier. The action
-waits for the ~70 ms transmission to complete and never runs in the I2S
-acquisition task. GPIO18 is the classic ESP32 output; GPIO7 is used by the experimental
-ESP32-C3 SuperMini build. The experimental C3 target has I2S on GPIO4/5/6 and
-all tasks on core 0. Its audio latency and heap usage still require
-on-hardware benchmarking. Drive an IR LED using a transistor
-and current limiting, not directly from the GPIO.
+after reboot. The experimental ESP32-C3 SuperMini target has I2S on GPIO5/6/7
+(BCLK, WS, SD), leaving GPIO8 free for the onboard LED and boot strapping.
+All C3 tasks run on core 0. Audio latency and heap usage still require
+on-hardware benchmarking.
 
 The two states are independent (both may be true) and are published only when
 the held detector output changes. Nothing has a value until its first hold
