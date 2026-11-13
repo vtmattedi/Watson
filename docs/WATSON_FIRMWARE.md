@@ -1,7 +1,8 @@
 # Watson firmware
 
-Watson is an **acoustic observation device**: ESP32 DevKit V1 + INMP441. It
-listens and reports three independent observations over NightMareNetwork. It
+Watson is an **acoustic observation device**: Waveshare ESP32-C3-Zero + one
+INMP441 by default, or the original ESP32 DevKit V1. It listens and reports
+three independent observations over NightMareNetwork. It
 does not infer whether the air conditioner is on, or whether a command worked;
 the controller combines these with what it sent.
 
@@ -27,10 +28,19 @@ in a `ManagedEvent<String>`.
 ## Build, flash, monitor
 
 ```text
-pio run -t upload --upload-port COM18      # USB
-pio device monitor -p COM18                # 921600 baud
-pio run -e esp32dev-notcp                  # same firmware, no raw PCM server
+pio run                                         # ESP32-C3-Zero (default)
+pio run -e esp32c3-zero -t upload --upload-port <port>
+pio device monitor -p <port> -b 921600
+pio run -e esp32dev                            # classic ESP32, TCP
+pio run -e esp32dev-notcp                      # classic ESP32, no TCP
 ```
+
+C3-Zero / INMP441 wiring: **WS/LRCLK → GPIO6; SCK/BCLK → GPIO7;
+SD/DOUT → GPIO4; L/R → GND; VDD → 3V3; GND → GND.**
+GPIO8/9 are strapping pins; GPIO9 also drives BOOT; GPIO10 is the onboard
+WS2812 RGB LED. The C3 configuration enables native USB CDC/JTAG and leaves
+the raw PCM TCP debug server disabled. C3 audio reliability and OTA still
+require real-device testing.
 
 `include/creds.h` (gitignored; template `creds.example.h`) holds the Wi-Fi and
 broker credentials NightMareNetwork reads. Platform: pioarduino 55.03.39
@@ -59,6 +69,11 @@ INMP441 --I2S DMA--> acquisition task (core 0, prio 12)
                                                                           = the only NightMare callers
 ```
 
+The diagram above describes the original **dual-core ESP32** with TCP enabled.
+On **ESP32-C3-Zero**, acquisition and analysis both execute on core 0; TCP is
+compiled out. The C3 has no hardware floating-point unit, so the classic ESP32
+FFT timing/CPU measurements below must not be assumed to apply.
+
 * **Acquisition never waits.** It reads 512-sample blocks (32 ms = one hop = one
   TCP frame) and pushes them to each consumer's queue. A full queue *refuses*
   the block, counts it, and the next block that gets in carries the loss. I2S
@@ -80,9 +95,9 @@ INMP441 --I2S DMA--> acquisition task (core 0, prio 12)
 
 ### Memory is the constraint
 
-Wi-Fi and the TLS session to the broker need most of the ~210 KB of
-byte-addressable internal RAM. What the audio path costs, and how it was kept
-small:
+The following heap and performance numbers were measured on the original
+classic ESP32, **not** on the ESP32-C3. Wi-Fi and TLS need substantial internal
+RAM; the audio path minimizes allocations as follows:
 
 * queue slots and the Hamming table live in the ESP32's *instruction-RAM heap*
   (~37 KB that normal allocations cannot use). They are integer words only: the
@@ -184,7 +199,8 @@ Build it out with `-DENABLE_TCP=0` (`pio run -e esp32dev-notcp`).
 
 `fan_detected` and `compressor_detected` declare NightMare's hardware policy
 with `REPORT_HW_CONNECTION`, so their manifest entries carry
-`hardware.connected`. GPIO33 (INMP441 SD) has the internal pulldown enabled, so
+`hardware.connected`. The I2S SD input (GPIO4 on C3-Zero, GPIO33 on the
+classic ESP32) has the internal pulldown enabled, so
 an unplugged or unpowered microphone reads as constant zero instead of floating
 noise. A block whose 24-bit samples span <= 8 LSB is "flat" (a live INMP441 is
 hundreds of LSB even in a silent room); 32 flat blocks in a row (1.02 s) mark the
