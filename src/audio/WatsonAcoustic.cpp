@@ -29,6 +29,18 @@ namespace watson
         ManagedSensor<bool> compressorDetected("acoustic:compressor_detected");
         ManagedEvent<std::string> beepEvent("acoustic:beep");
 
+        // Network-facing output toggles. They control publication, not the DSP:
+        // audio stays continuous, so enabling an output exposes the current
+        // independently held observation without an artificial restart.
+        ManagedState<bool> fanNetworkEnabled("acoustic:fan:enabled");
+        ManagedState<bool> compressorNetworkEnabled("acoustic:compressor:enabled");
+        ManagedState<bool> beepNetworkEnabled("acoustic:beep:enabled");
+
+        bool acceptNetworkToggle(ManagedState<bool> &, const bool &)
+        {
+            return true;
+        }
+
 #if ENABLE_TCP
         RawAudioTcp gTcp;
 #endif
@@ -83,6 +95,12 @@ namespace watson
         // Public interface, bound before startNightMareESP() as NightMare
         // expects. Nothing has a value until the first hold elapses.
         installDetectorConfigHandlers();
+        fanNetworkEnabled.onWrite = acceptNetworkToggle;
+        compressorNetworkEnabled.onWrite = acceptNetworkToggle;
+        beepNetworkEnabled.onWrite = acceptNetworkToggle;
+        fanNetworkEnabled.setValue(true);
+        compressorNetworkEnabled.setValue(true);
+        beepNetworkEnabled.setValue(true);
 
         // Both observations come from one physical microphone, and NightMare
         // can say whether that hardware is there: declaring REPORT_HW_CONNECTION
@@ -328,26 +346,52 @@ namespace watson
                           hardware ? "connected" : "DISCONNECTED (flatline)");
         }
 
+        // Disabled outputs are unavailable, not false. In particular, an
+        // absent report must never be misread as "the AC fan is off".
+        const bool fanEnabled = fanNetworkEnabled.getValue();
+        if (!fanEnabled && fanDetected.available())
+            fanDetected.setAvailable(false);
+
+        const bool compressorEnabled = compressorNetworkEnabled.getValue();
+        if (!compressorEnabled && compressorDetected.available())
+            compressorDetected.setAvailable(false);
+
         const int8_t fan = fanState_.load(std::memory_order_acquire);
-        if (fan != fanSent_ && fan >= 0)
+        if (fanEnabled && hardware && fan >= 0 &&
+            (fan != fanSent_ || !fanDetected.available()))
         {
-            fanDetected.setValue(fan != 0);
-            fanSent_ = fan;
-            Serial.printf("# watson: fan_detected=%s\n", fan ? "true" : "false");
+            // setValue() while unavailable refreshes the local truth; only
+            // then restore availability to announce the current observation.
+            if (fanDetected.setValue(fan != 0))
+            {
+                fanSent_ = fan;
+                if (!fanDetected.available())
+                    fanDetected.setAvailable(true);
+                Serial.printf("# watson: fan_detected=%s\n", fan ? "true" : "false");
+            }
         }
 
         const int8_t compressor = compressorState_.load(std::memory_order_acquire);
-        if (compressor != compressorSent_ && compressor >= 0)
+        if (compressorEnabled && hardware && compressor >= 0 &&
+            (compressor != compressorSent_ || !compressorDetected.available()))
         {
-            compressorDetected.setValue(compressor != 0);
-            compressorSent_ = compressor;
-            Serial.printf("# watson: compressor_detected=%s\n",
-                          compressor ? "true" : "false");
+            if (compressorDetected.setValue(compressor != 0))
+            {
+                compressorSent_ = compressor;
+                if (!compressorDetected.available())
+                    compressorDetected.setAvailable(true);
+                Serial.printf("# watson: compressor_detected=%s\n",
+                              compressor ? "true" : "false");
+            }
         }
 
         BeepPayload payload;
         while (xQueueReceive(beepQueue_, &payload, 0) == pdTRUE)
         {
+            // Always drain: a disabled output must not replay old beeps when
+            // enabled again. Keep the original event payload byte-for-byte.
+            if (!beepNetworkEnabled.getValue())
+                continue;
             char json[160];
             encodeBeepPayload(payload, json, sizeof(json));
             beepEvent.fire(std::string(json));
