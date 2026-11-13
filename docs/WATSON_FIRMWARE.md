@@ -29,8 +29,10 @@ after reboot. Send the `irsend` action a string payload of `0xEB14FF00`
 or JSON `{"code":"0xEB14FF00"}`. Invalid input or unavailable RMT reports
 failure. NEC is transmitted LSB-first, once, with a 38 kHz carrier. The action
 waits for the ~70 ms transmission to complete and never runs in the I2S
-acquisition task. GPIO18 is the classic ESP32 output; GPIO7 is reserved for
-ESP32-C3 when a full C3 build is introduced. Drive an IR LED using a transistor
+acquisition task. GPIO18 is the classic ESP32 output; GPIO7 is used by the experimental
+ESP32-C3 SuperMini build. The experimental C3 target has I2S on GPIO4/5/6 and
+all tasks on core 0. Its audio latency and heap usage still require
+on-hardware benchmarking. Drive an IR LED using a transistor
 and current limiting, not directly from the GPIO.
 
 The two states are independent (both may be true) and are published only when
