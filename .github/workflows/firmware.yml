@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        environment: [esp32dev, esp32dev-notcp, esp32c3-supermini]
+        environment: [esp32dev, esp32dev-notcp, esp32c3-zero]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
