@@ -27,10 +27,6 @@ Sensor output resumes with the current observation when re-enabled; beep
 events are never queued for replay. These run-time toggles reset to enabled on
 reboot. The three original resources and beep JSON remain unchanged.
 
-An additional `irsend` `ManagedAction` transmits one 32-bit NEC frame at
-38 kHz (LSB-first), e.g. `{"code":"0xEB14FF00"}`. No receiver, learning
-mode, repeats or other protocols are included.
-
 ## Hardware
 
 | INMP441 | ESP32 DevKit V1 |
@@ -42,20 +38,17 @@ mode, repeats or other protocols are included.
 | WS      | GPIO25          |
 | SD      | GPIO33          |
 
-Optional IR TX on **GPIO18** for the classic ESP32 DevKit. Use an IR LED
-through a transistor with suitable resistors (do not drive the LED directly
-from GPIO).
-
 Experimental **ESP32-C3 SuperMini** wiring:
 
 | INMP441 | ESP32-C3 SuperMini |
 | --- | --- |
 | VDD / GND | 3V3 / GND |
 | L/R | GND (mono, left) |
-| SCK / WS / SD | GPIO4 / GPIO5 / GPIO6 |
-| Optional IR TX | GPIO7 (transistor driver) |
+| SCK / WS / SD | GPIO5 / GPIO6 / GPIO7 |
 
-The C3 target uses core 0 for all tasks; raw PCM TCP is compiled out. Its
+GPIO8 is left unused: on common SuperMini boards it drives the onboard
+LED and is a boot strapping pin. The C3 target uses core 0 for all tasks;
+raw PCM TCP is compiled out. Its
 single-core CPU load and smaller RAM have **not** been hardware validated.
 
 ## Build
