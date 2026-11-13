@@ -14,7 +14,7 @@
 //   INMP441 GND -> GND        INMP441 WS  -> GPIO25
 //   INMP441 L/R -> GND        INMP441 SD  -> GPIO33
 //
-// Experimental C3 SuperMini: SCK=GPIO5, WS=GPIO6, SD=GPIO7.
+// Experimental Waveshare C3-Zero: SCK=GPIO5, WS=GPIO6, SD=GPIO7.
 // The algorithm, names, and payloads remain unchanged.
 //
 // It listens and reports three independent observations over NightMare:
