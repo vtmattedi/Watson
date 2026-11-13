@@ -38,17 +38,18 @@ reboot. The three original resources and beep JSON remain unchanged.
 | WS      | GPIO25          |
 | SD      | GPIO33          |
 
-Experimental **ESP32-C3 SuperMini** wiring:
+Experimental **Waveshare ESP32-C3-Zero** wiring:
 
-| INMP441 | ESP32-C3 SuperMini |
+| INMP441 | ESP32-C3-Zero |
 | --- | --- |
 | VDD / GND | 3V3 / GND |
 | L/R | GND (mono, left) |
 | SCK / WS / SD | GPIO5 / GPIO6 / GPIO7 |
 
-GPIO8 is left unused: on common SuperMini boards it drives the onboard
-LED and is a boot strapping pin. The C3 target uses core 0 for all tasks;
-raw PCM TCP is compiled out. Its
+GPIO8 is left unused because it is a boot-strapping pin (not the RGB LED
+pin on this board). The C3-Zero's onboard WS2812 RGB LED is on GPIO10;
+BOOT is on GPIO9. The C3 target uses core 0 for all tasks and raw PCM
+TCP is compiled out. Its
 single-core CPU load and smaller RAM have **not** been hardware validated.
 
 ## Build
@@ -58,8 +59,8 @@ cp include/creds.example.h include/creds.h     # then fill it in; creds.h is git
 pio run -e esp32dev                            # with the raw PCM debug server
 pio run -e esp32dev-notcp                      # without it
 pio run -e esp32dev -t upload --upload-port COM18
-pio run -e esp32c3-supermini                   # experimental C3 build
-pio run -e esp32c3-supermini -t upload --upload-port <port>
+pio run -e esp32c3-zero                        # experimental C3-Zero build
+pio run -e esp32c3-zero -t upload --upload-port <port>
 ```
 
 NightMareNetwork is fetched from GitHub by `lib_deps`. `-DNM_ENABLE_OTA=1` in
