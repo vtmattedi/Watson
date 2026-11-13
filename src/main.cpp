@@ -8,11 +8,13 @@
 // ============================================================
 // Watson: an acoustic observation device.
 //
-// ESP32 DevKit V1 + INMP441
+// Waveshare ESP32-C3-Zero + one INMP441 (default build):
 //
-//   INMP441 VDD -> 3V3        INMP441 SCK -> GPIO26
-//   INMP441 GND -> GND        INMP441 WS  -> GPIO25
-//   INMP441 L/R -> GND        INMP441 SD  -> GPIO33
+//   INMP441 VDD -> 3V3        INMP441 SCK -> GPIO7
+//   INMP441 GND -> GND        INMP441 WS  -> GPIO6
+//   INMP441 L/R -> GND        INMP441 SD  -> GPIO4
+//
+// Classic ESP32 DevKit V1 is still supported with BCLK=26, WS=25, SD=33.
 //
 // It listens and reports three independent observations over NightMare:
 //
