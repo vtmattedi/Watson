@@ -111,7 +111,10 @@ namespace watson
             HardwarePolicy mic;
             mic.pollMs = 0;
             mic.flags = REPORT_HW_CONNECTION;
-            mic.note = "INMP441 mic, I2S SD on GPIO33";
+            char micNote[64];
+            snprintf(micNote, sizeof(micNote), "INMP441 mic, I2S SD on GPIO%d",
+                     kI2sDin);
+            mic.note = micNote;
             if (!fanDetected.setHardwarePolicy(mic) ||
                 !compressorDetected.setHardwarePolicy(mic))
                 Serial.println("# watson: could not declare the hardware policy");
