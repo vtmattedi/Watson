@@ -57,16 +57,25 @@ namespace watson
     constexpr int kAnalysisQueueBlocks = 8; // 3 history + 5 backlog (160 ms), 16 KB
     constexpr int kTcpQueueBlocks = 6;      // 192 ms, 12 KB
 
+#if CONFIG_IDF_TARGET_ESP32C3
+    // C3 SuperMini: single core, audio and network share the CPU.
+    constexpr int kI2sBclk = 4;
+    constexpr int kI2sLrclk = 5;
+    constexpr int kI2sDin = 6;
+    constexpr int kAcquisitionCore = 0;
+    constexpr int kAnalysisCore = 0;
+    constexpr int kTcpCore = 0;
+#else
+    // Classic dual-core ESP32 DevKit V1.
     constexpr int kI2sBclk = 26;
     constexpr int kI2sLrclk = 25;
     constexpr int kI2sDin = 33;
-
-    // Task layout (classic ESP32, two cores). Wi-Fi / lwIP / MQTT run on core 0
-    // at high priority; everything of ours that matters runs on core 1.
     constexpr int kAcquisitionCore = 0;
-    constexpr int kAcquisitionPriority = 12; // above analysis, tcp and loop()
     constexpr int kAnalysisCore = 1;
-    constexpr int kAnalysisPriority = 4;
     constexpr int kTcpCore = 1;
+#endif
+    // Acquisition always outranks analysis; TCP is lowest-priority.
+    constexpr int kAcquisitionPriority = 12;
+    constexpr int kAnalysisPriority = 4;
     constexpr int kTcpPriority = 3;
 } // namespace watson
