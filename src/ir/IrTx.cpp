@@ -105,7 +105,16 @@ namespace watson
                 esp_err_t err = rmt_transmit(
                     txChannel, copyEncoder, frame, sizeof(frame), &config);
                 if (err == ESP_OK)
-                    err = rmt_tx_wait_all_done(txChannel, pdMS_TO_TICKS(120));
+                {
+                    // IDF takes milliseconds, not FreeRTOS ticks. If a
+                    // transmission stalls, abort it before frame[] expires.
+                    err = rmt_tx_wait_all_done(txChannel, 150);
+                    if (err != ESP_OK)
+                    {
+                        rmt_disable(txChannel);
+                        ready = (rmt_enable(txChannel) == ESP_OK);
+                    }
+                }
                 if (err != ESP_OK)
                     return {false, "IR transmission failed"};
 
