@@ -14,6 +14,23 @@ controller:
 | `acoustic:compressor_detected` | `ManagedSensor<bool>`  | compressor tone present, retained  |
 | `acoustic:beep`                | `ManagedEvent<string>` | one event per accepted beep        |
 
+Network output controls (all default to `true` after boot):
+
+| Resource | Type | Effect when false |
+| --- | --- | --- |
+| `acoustic:fan:enabled` | `ManagedState<bool>` | withdraws fan state from network |
+| `acoustic:compressor:enabled` | `ManagedState<bool>` | withdraws compressor state from network |
+| `acoustic:beep:enabled` | `ManagedState<bool>` | suppresses beep events |
+
+These switches affect **network output only**: detection continues, unchanged.
+Sensor output resumes with the current observation when re-enabled; beep
+events are never queued for replay. These run-time toggles reset to enabled on
+reboot. The three original resources and beep JSON remain unchanged.
+
+An additional `irsend` `ManagedAction` transmits one 32-bit NEC frame at
+38 kHz (LSB-first), e.g. `{"code":"0xEB14FF00"}`. No receiver, learning
+mode, repeats or other protocols are included.
+
 ## Hardware
 
 | INMP441 | ESP32 DevKit V1 |
@@ -24,6 +41,12 @@ controller:
 | SCK     | GPIO26          |
 | WS      | GPIO25          |
 | SD      | GPIO33          |
+
+Optional IR TX on **GPIO18** for the classic ESP32 DevKit. Use an IR LED
+through a transistor with suitable resistors (do not drive the LED directly
+from GPIO). The source also reserves GPIO7 on ESP32-C3 builds, but the current
+firmware/build target remains the two-core ESP32 DevKit V1: C3 audio performance
+and memory have not been validated.
 
 ## Build
 
