@@ -11,6 +11,28 @@ acoustic:compressor_detected  ManagedSensor<bool>   retained state
 acoustic:beep                 ManagedEvent<String>  transient, never retained
 ```
 
+Additional network Resources (the original observation contract is unchanged):
+
+```text
+acoustic:fan:enabled          ManagedState<bool>  read/write, default true
+acoustic:compressor:enabled   ManagedState<bool>  read/write, default true
+acoustic:beep:enabled         ManagedState<bool>  read/write, default true
+irsend                        ManagedAction       NEC 32-bit code, 38 kHz IR TX
+```
+
+The writable controls are network output gates, not DSP or audio capture
+toggles. Disabling fan/compressor withdraws their retained state (unavailable,
+**not false**). Enabling re-announces the current held observation when the
+microphone is connected. Disabling beep drops new events; re-enabling never
+replays suppressed events. The toggles are runtime values and start enabled
+after reboot. Send the `irsend` action a string payload of `0xEB14FF00`
+or JSON `{"code":"0xEB14FF00"}`. Invalid input or unavailable RMT reports
+failure. NEC is transmitted LSB-first, once, with a 38 kHz carrier. The action
+waits for the ~70 ms transmission to complete and never runs in the I2S
+acquisition task. GPIO18 is the classic ESP32 output; GPIO7 is reserved for
+ESP32-C3 when a full C3 build is introduced. Drive an IR LED using a transistor
+and current limiting, not directly from the GPIO.
+
 The two states are independent (both may be true) and are published only when
 the held detector output changes. Nothing has a value until its first hold
 elapses. A beep is one Event per accepted tone, with a JSON payload:
