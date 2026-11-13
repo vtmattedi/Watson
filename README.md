@@ -44,9 +44,19 @@ mode, repeats or other protocols are included.
 
 Optional IR TX on **GPIO18** for the classic ESP32 DevKit. Use an IR LED
 through a transistor with suitable resistors (do not drive the LED directly
-from GPIO). The source also reserves GPIO7 on ESP32-C3 builds, but the current
-firmware/build target remains the two-core ESP32 DevKit V1: C3 audio performance
-and memory have not been validated.
+from GPIO).
+
+Experimental **ESP32-C3 SuperMini** wiring:
+
+| INMP441 | ESP32-C3 SuperMini |
+| --- | --- |
+| VDD / GND | 3V3 / GND |
+| L/R | GND (mono, left) |
+| SCK / WS / SD | GPIO4 / GPIO5 / GPIO6 |
+| Optional IR TX | GPIO7 (transistor driver) |
+
+The C3 target uses core 0 for all tasks; raw PCM TCP is compiled out. Its
+single-core CPU load and smaller RAM have **not** been hardware validated.
 
 ## Build
 
@@ -55,6 +65,8 @@ cp include/creds.example.h include/creds.h     # then fill it in; creds.h is git
 pio run -e esp32dev                            # with the raw PCM debug server
 pio run -e esp32dev-notcp                      # without it
 pio run -e esp32dev -t upload --upload-port COM18
+pio run -e esp32c3-supermini                   # experimental C3 build
+pio run -e esp32c3-supermini -t upload --upload-port <port>
 ```
 
 NightMareNetwork is fetched from GitHub by `lib_deps`. `-DNM_ENABLE_OTA=1` in
