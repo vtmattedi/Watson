@@ -9,11 +9,14 @@
 // ============================================================
 // Watson: an acoustic observation device.
 //
-// ESP32 DevKit V1 + INMP441
+// ESP32 DevKit V1 + INMP441 (default build)
 //
 //   INMP441 VDD -> 3V3        INMP441 SCK -> GPIO26
 //   INMP441 GND -> GND        INMP441 WS  -> GPIO25
 //   INMP441 L/R -> GND        INMP441 SD  -> GPIO33
+//
+// Experimental C3 SuperMini: SCK=GPIO4, WS=GPIO5, SD=GPIO6,
+// IR TX=GPIO7. The algorithm, names, and payloads remain unchanged.
 //
 // It listens and reports three independent observations over NightMare:
 //
