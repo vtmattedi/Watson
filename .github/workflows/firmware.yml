@@ -1,0 +1,25 @@
+name: Watson firmware build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  platformio:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [esp32dev, esp32dev-notcp, esp32c3-supermini]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PlatformIO
+        run: python -m pip install platformio
+      - name: Provide placeholder device credentials
+        run: cp include/creds.example.h include/creds.h
+      - name: Compile firmware
+        run: pio run -e ${{ matrix.environment }}
