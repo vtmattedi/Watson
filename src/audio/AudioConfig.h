@@ -57,16 +57,28 @@ namespace watson
     constexpr int kAnalysisQueueBlocks = 8; // 3 history + 5 backlog (160 ms), 16 KB
     constexpr int kTcpQueueBlocks = 6;      // 192 ms, 12 KB
 
+#if defined(CONFIG_IDF_TARGET_ESP32C3)
+    // Waveshare ESP32-C3-Zero + single INMP441, L/R tied to GND (left slot).
+    // Final physical wiring: WS=GPIO6, SCK/BCLK=GPIO7, SD/DIN=GPIO4.
+    // All tasks share the C3's only CPU core.
+    constexpr int kI2sBclk = 7;
+    constexpr int kI2sLrclk = 6;
+    constexpr int kI2sDin = 4;
+    constexpr int kAcquisitionCore = 0;
+    constexpr int kAnalysisCore = 0;
+    constexpr int kTcpCore = 0;
+#else
+    // Classic dual-core ESP32 DevKit V1 wiring remains supported.
     constexpr int kI2sBclk = 26;
     constexpr int kI2sLrclk = 25;
     constexpr int kI2sDin = 33;
-
-    // Task layout (classic ESP32, two cores). Wi-Fi / lwIP / MQTT run on core 0
-    // at high priority; everything of ours that matters runs on core 1.
     constexpr int kAcquisitionCore = 0;
-    constexpr int kAcquisitionPriority = 12; // above analysis, tcp and loop()
     constexpr int kAnalysisCore = 1;
-    constexpr int kAnalysisPriority = 4;
     constexpr int kTcpCore = 1;
+#endif
+
+    // Acquisition must outrank analysis; TCP is lowest priority.
+    constexpr int kAcquisitionPriority = 12;
+    constexpr int kAnalysisPriority = 4;
     constexpr int kTcpPriority = 3;
 } // namespace watson
