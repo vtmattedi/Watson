@@ -4,6 +4,7 @@
 
 #include "audio/SelfTest.h"
 #include "audio/WatsonAcoustic.h"
+#include "ir/IrTx.h"
 
 // ============================================================
 // Watson: an acoustic observation device.
@@ -202,6 +203,11 @@ void setup()
     Serial.printf("# heap: %lu free after audio buffers (largest block %lu)\n",
                   (unsigned long)heap_caps_get_free_size(MALLOC_CAP_8BIT),
                   (unsigned long)heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+
+    // IR is independent of the audio and network paths; failure leaves Watson
+    // running as a normal acoustic observer with irsend reporting unavailable.
+    if (!watson::ir::begin())
+        Serial.println("ERROR: IR TX initialization failed");
 
     setCommandResolver(onWatsonCommand);
     onOTAEvent(onOta);
