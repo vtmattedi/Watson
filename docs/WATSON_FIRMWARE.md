@@ -24,10 +24,11 @@ toggles. Disabling fan/compressor withdraws their retained state (unavailable,
 **not false**). Enabling re-announces the current held observation when the
 microphone is connected. Disabling beep drops new events; re-enabling never
 replays suppressed events. The toggles are runtime values and start enabled
-after reboot. The experimental ESP32-C3 SuperMini target has I2S on GPIO5/6/7
-(BCLK, WS, SD), leaving GPIO8 free for the onboard LED and boot strapping.
-All C3 tasks run on core 0. Audio latency and heap usage still require
-on-hardware benchmarking.
+after reboot. The experimental Waveshare ESP32-C3-Zero target has I2S on
+GPIO5/6/7 (BCLK, WS, SD), avoiding the GPIO8 boot-strapping pin. The
+board's WS2812 RGB LED is on GPIO10, and BOOT is on GPIO9. All C3 tasks
+run on core 0. Audio latency and heap usage still require on-hardware
+benchmarking.
 
 The two states are independent (both may be true) and are published only when
 the held detector output changes. Nothing has a value until its first hold
