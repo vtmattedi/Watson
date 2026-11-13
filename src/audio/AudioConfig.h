@@ -58,7 +58,7 @@ namespace watson
     constexpr int kTcpQueueBlocks = 6;      // 192 ms, 12 KB
 
 #if CONFIG_IDF_TARGET_ESP32C3
-    // C3 SuperMini: single core, audio and network share the CPU.
+    // Waveshare C3-Zero: single core, audio and network share the CPU.
     constexpr int kI2sBclk = 5;
     constexpr int kI2sLrclk = 6;
     constexpr int kI2sDin = 7;
