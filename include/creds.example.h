@@ -19,10 +19,8 @@
 #define REMOTE_MQTT_URL  "your-broker.example.com"
 #define REMOTE_MQTT_PORT 8883
 
-// Not used while NM_NETWORK_LOCALMQTT is 0 (NightMareConfig.h), but the
-// MQTT driver still names them.
-#define LOCAL_MQTT_HOST  "127.0.0.1"
-#define LOCAL_MQTT_PORT  1883
+// Optional: LOCAL_MQTT_HOST / LOCAL_MQTT_PORT describe a LAN broker. Watson
+// does not use one, so they are left out.
 
 #define MQTT_USER   "username"
 #define MQTT_PASSWD "password"

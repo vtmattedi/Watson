@@ -32,8 +32,8 @@
 // SNTP, OTA and the raw PCM debug server, but MQTT itself stays disabled while
 // ESP-NOW is active and is enabled only by Watson's failover controller.
 // There is no local broker. ESP-NOW needs NM_ESPNOW_PSK in creds.h.
-#define NM_NETWORK_MQTT 1
-#define NM_NETWORK_LOCALMQTT 0
+// The broker profile is a runtime choice (REMOTE, see main.cpp); creds.h has no
+// local broker, so only REMOTE exists.
 #define NM_NETWORK_ESPNOW 1
 
 // Watson owns MQTT failover timing when both transports are built. Keep
