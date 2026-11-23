@@ -46,3 +46,7 @@
 // TCP port the raw PCM debug server listens on (ENABLE_TCP). The PC tools
 // default to this, so there is usually no reason to change it.
 #define AUDIO_TCP_PORT 3333
+
+// NightMare namespace id (empty = legacy, no namespace); NM_TOPIC_ROOT is the MQTT topic root used once a namespace is set.
+// #define NM_NAMESPACE ""
+// #define NM_TOPIC_ROOT "nm"
